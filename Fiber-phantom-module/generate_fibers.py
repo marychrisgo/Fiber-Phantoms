@@ -9,90 +9,59 @@ def save_as_nifti(array, file_path): # for 3D Slicer visualization
     nifti_img = nib.Nifti1Image(array, affine=np.eye(4))  
     nib.save(nifti_img, file_path)
 
-def choose_semi_axes(semi_axes_list, probabilities):
-    return random.choices(semi_axes_list, weights=probabilities, k=1)[0]
+# Sphere and with fiber curving
+# time for 100 fibers (2min:47s)
+# curved fibers maximum = 25 only :(
+
+def is_within_bounds(point, dimensions, radius):
+    x, y, z = point
+    return (radius <= x < dimensions[0] - radius and
+            radius <= y < dimensions[1] - radius and
+            radius <= z < dimensions[2] - radius)
+
+def is_within_pipe(point, center_y, center_z, pipe_radius):
+    y, z = point[1], point[2]
+    return ((y - center_y)**2 + (z - center_z)**2) <= pipe_radius**2
 
 
-def is_within_bounds_ellipsoid(center, volume, semi_axes):
-    x, y, z = center
-    a, b, c = semi_axes  
-    return (a <= x < volume.shape[0] - a) and \
-           (b <= y < volume.shape[1] - b) and \
-           (c <= z < volume.shape[2] - c)
+def can_place_sphere(center, volume, radius=1, pipe_radius=50):
 
-
-def can_place_ellipsoid(center, volume, semi_axes, allow_fusion=False, fusion_chance=0):
-    a, b, c = semi_axes
-    for x in range(-a, a + 1):
-        for y in range(-b, b + 1):
-            for z in range(-c, c + 1):
-                if ((x**2) / (a**2)) + ((y**2) / (b**2)) + ((z**2) / (c**2)) <= 1:
+    center_y, center_z = volume.shape[1] // 2, volume.shape[2] // 2
+    for x in range(-radius, radius + 1):
+        for y in range(-radius, radius + 1):
+            for z in range(-radius, radius + 1):
+                if x**2 + y**2 + z**2 <= radius**2:
                     ix, iy, iz = center[0] + x, center[1] + y, center[2] + z
-                    if not is_within_bounds_ellipsoid(center, volume, semi_axes):
-                        return False
-                    if volume[ix, iy, iz] == 1:
-                        if allow_fusion and random.random() < (fusion_chance / 100.0):
-                            continue
+                    if not is_within_pipe((ix, iy, iz), center_y, center_z, pipe_radius) or volume[ix, iy, iz] == 1:
                         return False
     return True
 
+def add_voxel_sphere_to_volume(volume, center, radius=1, pipe_radius=50):
+    center_y, center_z = volume.shape[1] // 2, volume.shape[2] // 2
+    for x in range(-radius, radius + 1):
+        for y in range(-radius, radius + 1):
+            for z in range(-radius, radius + 1):
+                if x**2 + y**2 + z**2 <= radius**2 and is_within_pipe((center[0]+x, center[1]+y, center[2]+z), center_y, center_z, pipe_radius):
+                    volume[center[0]+x, center[1]+y, center[2]+z] = 1
 
-def add_voxel_ellipsoid_to_volume(volume, center, semi_axes):
-    a, b, c = semi_axes
-    for x in range(-a, a + 1):
-        for y in range(-b, b + 1):
-            for z in range(-c, c + 1):
-                if ((x**2) / (a**2)) + ((y**2) / (b**2)) + ((z**2) / (c**2)) <= 1:
-                    ix, iy, iz = center[0] + x, center[1] + y, center[2] + z
-                    if is_within_bounds_ellipsoid(center, volume, semi_axes):
-                        volume[ix, iy, iz] = 1
-
-
-
-def update_volume_with_fiber(volume, fiber, semi_axes=[1,1,1]):
+def update_volume_with_fiber(volume, fiber, radius=1, pipe_radius=50):
     for point in fiber:
-        add_voxel_ellipsoid_to_volume(volume, point, semi_axes)
+        add_voxel_sphere_to_volume(volume, point, radius, pipe_radius)
 
-def plot_ellipsoid(ax, center, semi_axes=[6, 12, 6], color='b', alpha=0.2):
-    x0, y0, z0 = center
-    a, b, c = semi_axes
-    
-    u = np.linspace(0, 2 * np.pi, 100)
-    v = np.linspace(0, np.pi, 100)
-    
-    x = x0 + a * np.outer(np.cos(u), np.sin(v))
-    y = y0 + b * np.outer(np.sin(u), np.sin(v))
-    z = z0 + c * np.outer(np.ones(np.size(u)), np.cos(v))
-    
-    ax.plot_surface(x, y, z, color=color, alpha=alpha)
+def generate_and_count_fibers(volume, num_fibers, mode ='straight', pipe_radius=50, min_length=300, max_length=400, radius=3):
 
-def generate_and_count_fibers(volume, random_seed, num_fibers, num_clusters, cluster_radius, min_length=50, max_length=100, 
-                              semi_axes_list = [(1, 1, 1), (2, 1, 1)], probabilities = [0.5, 0.3], curve_amplitude=0.1, curve_frequency=0.1, 
-                              preferred_direction=[1, 0, 0], bias=0.8, fusion_chance=0):
-    random.seed(random_seed)
-    np.random.seed(random_seed)
-    
     successful_fibers = 0
     fibers = []
     total_attempts = 0
-    max_total_attempts = 10000
+    max_total_attempts = 10000 
     
-    colors = plt.cm.jet(np.linspace(0,1,num_fibers))
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
-
     while successful_fibers < num_fibers and total_attempts < max_total_attempts:
-        semi_axes = choose_semi_axes(semi_axes_list, probabilities)
-        fiber = generate_3d_fiber_with_clustering(volume, num_clusters, cluster_radius, min_length, max_length, 
-                                                  semi_axes, curve_amplitude, curve_frequency, 
-                                                  preferred_direction, bias, fusion_chance)
+        if mode =='straight':
+            fiber = generate_3d_fiber(volume, min_length, max_length, radius, pipe_radius)
+        elif  mode == 'curve':
+            fiber = generate_3d_fiber_curved(volume, min_length, max_length, radius, pipe_radius)
         if fiber is not None:
-            update_volume_with_fiber(volume, fiber, semi_axes)  
-            for point in fiber:
-                plot_ellipsoid(ax, point, semi_axes=semi_axes, color=colors[successful_fibers], alpha=0.5)
-            ax.set_xlabel("X axis")
-            ax.set_ylabel("Y axis")
-            ax.set_zlabel("Z axis")
+            update_volume_with_fiber(volume, fiber, radius, pipe_radius)
             fibers.append(fiber)
             successful_fibers += 1
         total_attempts += 1
@@ -100,48 +69,48 @@ def generate_and_count_fibers(volume, random_seed, num_fibers, num_clusters, clu
     if successful_fibers < num_fibers:
         print(f"Warning: Only able to place {successful_fibers} fibers after {total_attempts} attempts.")
 
-    # save_as_nifti(volume, f'original_volume.nii')
-    plt.show()
+    plot_fibers(volume, fibers, num_fibers)
 
     return successful_fibers, fibers
 
-def generate_clusters(volume, num_clusters, cluster_radius):
-    clusters = []
-    attempts = 0
-    max_attempts = num_clusters * 100
-    while len(clusters) < num_clusters and attempts < max_attempts:
-        potential_center = np.array([random.randint(cluster_radius, dim - cluster_radius - 1) for dim in volume.shape])
-        if all(np.linalg.norm(potential_center - c) >= 2 * cluster_radius for c in clusters):
-            clusters.append(potential_center)
-        attempts += 1
-    if len(clusters) != num_clusters:
-        raise ValueError("Could not place all clusters within max attempts")
-    return clusters
+def plot_fibers(volume, fibers, num_fibers):
+    colors = plt.cm.jet(np.linspace(0, 1, num_fibers))
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d')
 
-def generate_3d_fiber_with_clustering(volume, num_clusters, cluster_radius, min_length=50, max_length=100, semi_axes=[1,1,1], 
-                                      curve_amplitude=0.1, curve_frequency=0.1, preferred_direction=[1, 0, 0], bias=0.8, fusion_chance=100):
-    clusters = generate_clusters(volume, num_clusters, cluster_radius)
+    for idx, fiber in enumerate(fibers):
+        plot_fiber(ax, fiber, color=colors[idx]) 
     
-    cluster_center = random.choice(clusters)
-    center_point = cluster_center + np.random.uniform(-cluster_radius, cluster_radius, size=3)
-    center_point = np.round(center_point).astype(int)  
+    ax.set_xlabel("X axis")
+    ax.set_ylabel("Y axis")
+    ax.set_zlabel("Z axis")
+    plt.show()
 
+def plot_fiber(ax, fiber, color='b'):
+    for point in fiber:
+        x, y, z = point
+        ax.scatter(x, y, z, color=color, alpha=0.5)
+
+def generate_3d_fiber(volume, min_length=300, max_length=400, radius=3, pipe_radius=50,
+                      curve_amplitude=0.0, curve_frequency=0.0, preferred_direction=[1, 0, 0], bias=0.90):
+    
     attempts = 0
     max_attempts = 1000
+    center_y, center_z = volume.shape[1] // 2, volume.shape[2] // 2
     while attempts < max_attempts:
-        center_point = np.array([random.randint(semi_axes[i], dim - semi_axes[i] - 1) for i, dim in enumerate(volume.shape)])
-        if can_place_ellipsoid(center_point, volume, semi_axes, allow_fusion=True, fusion_chance=fusion_chance):
+        center_point = np.array([random.randint(radius, dim - radius - 1) for dim in volume.shape])
+        if is_within_bounds(center_point, volume.shape, radius) and is_within_pipe(center_point, center_y, center_z, pipe_radius):
             break
         attempts += 1
     if attempts == max_attempts:
         return None
 
     fiber = [center_point]
-    
-    all_directions = [[1, 0, 0], [0, 1, 0], [0, 0, 1],
-                      [-1, 0, 0], [0, -1, 0], [0, 0, -1],
+
+
+    all_directions = [[1, 0, 0],
                       [1, 1, 0], [1, 0, 1], [0, 1, 1],
-                      [-1, -1, 0], [-1, 0, -1], [0, -1, -1],
+                      [-1, -1, 0],
                       [1, -1, 0], [1, 0, -1], [0, 1, -1],
                       [-1, 1, 0], [-1, 0, 1], [0, -1, 1]]
     all_directions = [np.array(d) for d in all_directions if d != preferred_direction]
@@ -158,26 +127,70 @@ def generate_3d_fiber_with_clustering(volume, num_clusters, cluster_radius, min_
 
     # randomness, sinusoidal adjustment, predefined direction with bias
 
-    step_size = max(semi_axes) / 6  
-
+    step_size = 1 
     for step in range(max_length):
         curve = np.sin(step * curve_frequency) * curve_amplitude
         adjustment = np.array([curve if i == 0 else curve * random.uniform(-1, 1) for i in range(3)], dtype=float)
         direction += adjustment
-        direction = direction / np.linalg.norm(direction)  
+
+
+        direction = direction / np.linalg.norm(direction)
 
         next_point = center_point + direction * step_size
         next_point_int = np.round(next_point).astype(int)
 
-        if not is_within_bounds_ellipsoid(next_point_int, volume, semi_axes) or \
-        not can_place_ellipsoid(next_point_int, volume, semi_axes, allow_fusion=True, fusion_chance=fusion_chance):
+        if not is_within_bounds(next_point_int, volume.shape, radius) or not is_within_pipe(next_point_int, center_y, center_z, pipe_radius) or not can_place_sphere(next_point_int, volume, radius, pipe_radius):
             if len(fiber) >= min_length:
-                break 
+                break
             else:
-                return None  
+                return None
 
-        fiber.append(next_point_int)  
-        center_point = next_point_int 
+        fiber.append(next_point_int)
+        center_point = next_point_int
+
+    if len(fiber) < min_length:
+        return None
 
     return fiber
+
+
+def generate_3d_fiber_curved(volume, min_length=300, max_length=400, radius=3, pipe_radius=50, bend_radius=100, bend_center=250):
+    attempts = 0
+    max_attempts = 1000
+    center_point = np.array([np.random.randint(radius, dim - radius - 1) for dim in volume.shape])
+    
+    center_y, center_z = volume.shape[1] // 2, volume.shape[2] // 2
+    while attempts < max_attempts:
+        if is_within_bounds(center_point, volume.shape, radius) and is_within_pipe(center_point, center_y, center_z, pipe_radius):
+            break
+        center_point = np.array([np.random.randint(radius, dim - radius - 1) for dim in volume.shape])
+        attempts += 1
+    if attempts == max_attempts:
+        return None
+
+    fiber = [center_point.copy()]
+    direction = np.array([1, 0, 0], dtype=float)  # Initial direction along x-axis
+
+    for step in range(max_length):
+        curve_effect = (center_point[0] - bend_center) / bend_radius
+        direction = np.array([1, curve_effect, 0])
+        direction /= np.linalg.norm(direction)  # Normalize direction
+
+        next_point = center_point + direction * radius
+        next_point_int = np.round(next_point).astype(int)
+        
+        if not is_within_bounds(next_point_int, volume.shape, radius) or not is_within_pipe(next_point_int, center_y, center_z, pipe_radius) or not can_place_sphere(next_point_int, volume, radius, pipe_radius):
+            if len(fiber) >= min_length:
+                break
+            else:
+                return None
+        
+        fiber.append(next_point_int.copy())
+        center_point = next_point_int
+
+    if len(fiber) < min_length:
+        return None
+
+    return fiber
+
 
