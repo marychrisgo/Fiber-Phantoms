@@ -2,8 +2,6 @@ import astra
 import numpy as np
 import pylab
 import matplotlib.pyplot as plt
-import nibabel
-
 import nibabel as nib
 
 def save_as_nifti(array, file_path): # for 3D Slicer visualization
@@ -11,7 +9,7 @@ def save_as_nifti(array, file_path): # for 3D Slicer visualization
     nib.save(nifti_img, file_path)
 
 
-def perform_tomography(volume, volume_dimensions, num_angles=180, geometry_type='parallel3d', det_width_u=1.0, det_width_v=1.0, det_count_x=512, det_count_y=768, i0=100, gamma=0.01, algorithm='SIRT3D_CUDA', show_plots=False):
+def perform_tomography(volume, volume_dimensions, num_angles, geometry_type, det_width_u, det_width_v, det_count_x, det_count_y, i0, gamma, algorithm, show_plots):
     vol_geom = astra.create_vol_geom(volume_dimensions)
     angles = np.linspace(0, np.pi, num_angles, False)
     proj_geom = astra.create_proj_geom(geometry_type, det_width_u, det_width_v, det_count_x, det_count_y, angles)
@@ -20,7 +18,9 @@ def perform_tomography(volume, volume_dimensions, num_angles=180, geometry_type=
 
     virtual_photon_count = i0 * np.exp(-gamma * proj_data_original)
     noisy_virtual_photon_counts = np.random.poisson(virtual_photon_count)
-    proj_data_noisy = -np.log(noisy_virtual_photon_counts / i0) / gamma
+    noisy_virtual_photon_counts[noisy_virtual_photon_counts == 0] = 1
+    proj_data_noisy = -np.log(noisy_virtual_photon_counts/i0)/gamma
+
     proj_id_noisy = astra.data3d.create('-sino', proj_geom, proj_data_noisy)
 
 
