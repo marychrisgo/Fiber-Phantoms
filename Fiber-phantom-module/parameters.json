@@ -1,10 +1,10 @@
 {
-    "random_seed": 42,
-    "num_volumes": 1,
+    "random_seed": 45,
+    "num_volumes": 9,
     "volume_dimensions": [512, 512, 512],
-    "pipe_radius": 50,
-    "num_fibers": 10,
-    "mode": "straight",
+    "pipe_radius": 250,
+    "num_fibers": 300,
+    "mode": "curve",
     
     "num_angles": 180,
     "geometry_type": "parallel3d",

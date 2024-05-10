@@ -69,22 +69,22 @@ def generate_and_count_fibers(volume, num_fibers, mode ='straight', pipe_radius=
     if successful_fibers < num_fibers:
         print(f"Warning: Only able to place {successful_fibers} fibers after {total_attempts} attempts.")
 
-    plot_fibers(volume, fibers, num_fibers)
+    # plot_fibers(volume, fibers, num_fibers)
 
     return successful_fibers, fibers
 
-def plot_fibers(volume, fibers, num_fibers):
-    colors = plt.cm.jet(np.linspace(0, 1, num_fibers))
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
+# def plot_fibers(volume, fibers, num_fibers):
+#     colors = plt.cm.jet(np.linspace(0, 1, num_fibers))
+#     fig = plt.figure(figsize=(10, 8))
+#     ax = fig.add_subplot(111, projection='3d')
 
-    for idx, fiber in enumerate(fibers):
-        plot_fiber(ax, fiber, color=colors[idx]) 
+#     for idx, fiber in enumerate(fibers):
+#         plot_fiber(ax, fiber, color=colors[idx]) 
     
-    ax.set_xlabel("X axis")
-    ax.set_ylabel("Y axis")
-    ax.set_zlabel("Z axis")
-    plt.show()
+#     ax.set_xlabel("X axis")
+#     ax.set_ylabel("Y axis")
+#     ax.set_zlabel("Z axis")
+    # plt.show()
 
 def plot_fiber(ax, fiber, color='b'):
     for point in fiber:
