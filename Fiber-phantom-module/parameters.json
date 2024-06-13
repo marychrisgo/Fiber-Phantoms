@@ -4,7 +4,7 @@
     "volume_dimensions": [512, 512, 512],
     "pipe_radius": 250,
     "num_filaments": 10,
-    "mode": "straight",
+    "curve_intensity": 1,
     
     "num_angles": 180,
     "geometry_type": "parallel3d",
