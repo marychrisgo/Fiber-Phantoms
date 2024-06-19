@@ -4,8 +4,7 @@ import numpy as np
 import random
 from scipy.interpolate import splprep, splev
 import nibabel as nib
-import math 
-from next_point_generator import NextPointGenerator
+
 
 def save_as_nifti(array, file_path): # for 3D Slicer visualization
     nifti_img = nib.Nifti1Image(array, affine=np.eye(4))  
@@ -65,13 +64,30 @@ def plot_filament(ax, filament, color='b'):
         ax.scatter(x, y, z, color=color, alpha=0.5)
 
 
-def generate_and_count_filaments(volume, num_filaments, pipe_radius=50, min_length=300, max_length=400, radius=3):
+def generate_and_count_filaments(volume, num_filaments, generator, pipe_radius=50, min_length=300, max_length=400, radius=3):
     successful_filaments = 0
     filaments = []
     total_attempts = 0
     max_total_attempts = 10000
-    
-    generator = NextPointGenerator(mode='combined')  # 'straight' or 'curve' or 'combined'
+
+    while successful_filaments < num_filaments and total_attempts < max_total_attempts:
+        filament = generate_3d_filament(volume, generator, min_length, max_length, radius, pipe_radius)
+        if filament is not None:
+            update_volume_with_filament(volume, filament, radius, pipe_radius)
+            filaments.append(filament)
+            successful_filaments += 1
+        total_attempts += 1
+
+    if successful_filaments < num_filaments:
+        print(f"Warning: Only able to place {successful_filaments} filaments after {total_attempts} attempts.")
+
+    return successful_filaments, filaments
+
+def generate_and_count_filaments(volume, num_filaments, generator, pipe_radius=50, min_length=300, max_length=400, radius=3):
+    successful_filaments = 0
+    filaments = []
+    total_attempts = 0
+    max_total_attempts = 10000
 
     while successful_filaments < num_filaments and total_attempts < max_total_attempts:
         filament = generate_3d_filament(volume, generator, min_length, max_length, radius, pipe_radius)
@@ -121,10 +137,10 @@ def generate_3d_filament(volume, generator, min_length=300, max_length=400, radi
     for step in range(num_steps):
         if generator.mode == 'straight':
             next_point = generator.suggest_next_point_straight(filament, direction, grow_from_start, step_size)
-        elif generator.mode == 'curve':
-            next_point = generator.suggest_next_point_curve(center_point, direction, step, max_length, radius)
-        elif generator.mode == 'combined':
-            next_point = generator.suggest_next_point_combined(filament, direction, grow_from_start, step_size, step, max_length)
+        elif generator.mode == 'c_curve':
+            next_point = generator.suggest_next_point_c_curve(filament, grow_from_start, radius)
+        elif generator.mode == 'curved_amplitude_based':
+            next_point = generator.suggest_next_point(filament, direction, grow_from_start, step_size, step, max_length)
 
         next_point_int = np.round(next_point).astype(int)
 
@@ -139,9 +155,7 @@ def generate_3d_filament(volume, generator, min_length=300, max_length=400, radi
         else:
             filament.append(next_point_int)
 
-        center_point = next_point_int
-        grow_from_start = not grow_from_start  
-
+        grow_from_start = not grow_from_start
         direction = random.choice(biased_direction_choices).astype(float)
 
     if len(filament) < min_length:

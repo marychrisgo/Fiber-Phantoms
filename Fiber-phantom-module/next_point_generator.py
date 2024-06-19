@@ -19,14 +19,18 @@ class NextPointGenerator:
             next_point = filament[-1] + direction * step_size
         return next_point
 
-    def suggest_next_point_curve(self, center_point, direction, step, max_length, radius):
+    def suggest_next_point_c_curve(self, filament, grow_from_start, radius):
+        center_point = filament[0] if grow_from_start else filament[-1]
         curve_effect = (center_point[0] - self.bend_center) / self.bend_radius
         direction = np.array([1, curve_effect, 0])
         direction /= np.linalg.norm(direction)
-        next_point = center_point + direction * radius
+        if grow_from_start:
+            next_point = center_point - direction * radius
+        else:
+            next_point = center_point + direction * radius
         return next_point
 
-    def suggest_next_point_combined(self, filament, direction, grow_from_start, step_size, step, max_length):
+    def suggest_next_point_curved_amplitude_based(self, filament, direction, grow_from_start, step_size, step, max_length):
         direction = direction / np.linalg.norm(direction)
         if grow_from_start:
             base_point = filament[0] - direction * step_size
@@ -39,7 +43,11 @@ class NextPointGenerator:
             offset_vector = np.cross(direction, [0, 0, 1])
             offset_vector = offset_vector / np.linalg.norm(offset_vector)
             offset_vector *= self.curve_amplitude * math.sin(angle)
-            next_point = base_point + offset_vector
+
+            if grow_from_start:
+                next_point = filament[0] - direction * step_size + offset_vector
+            else:
+                next_point = filament[-1] + direction * step_size + offset_vector
         else:
             next_point = base_point
 
@@ -48,9 +56,9 @@ class NextPointGenerator:
     def suggest_next_point(self, *args):
         if self.mode == 'straight':
             return self.suggest_next_point_straight(*args)
-        elif self.mode == 'curve':
-            return self.suggest_next_point_curve(*args)
-        elif self.mode == 'combined':
-            return self.suggest_next_point_combined(*args)
+        elif self.mode == 'c_curve':
+            return self.suggest_next_point_c_curve(*args)
+        elif self.mode == 'curved_amplitude_based':
+            return self.suggest_next_point_curved_amplitude_based(*args)
         else:
             raise ValueError(f"Unknown mode: {self.mode}")
