@@ -22,15 +22,9 @@ Ensure you have Conda installed on your system. You can download and install Con
 
 3. **Install ASTRA using Conda:**
     ```sh
-    conda install numpy==1.24.2 matplotlib==3.7.1 scipy==1.10.1 nibabel==5.0.0 h5py==3.8.0
     conda install -c astra-toolbox astra-toolbox
     ```
 
-4. **Install additional Python packages using pip: (only if the whl file did not successfully install these packages**
-    ```sh
-    pip install matplotlib
-    pip install nibabel
-    ```
 
 ## Usage
 
