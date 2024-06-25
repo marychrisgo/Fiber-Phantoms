@@ -1,0 +1,28 @@
+{
+    "random_seed": 45,
+    "num_volumes": 1,
+    "volume_dimensions": [512, 512, 512],
+    "pipe_radius": 250,
+    "num_filaments": 10,
+    "curve_intensity": 1,
+    "generator_mode": "c_curve",
+    "preferred_direction": [1, 0, 0],
+    "bias": 1.0,
+    "cylinder_params": [
+        {
+            "center": [256, 256, 256],
+            "radius": 10
+        }
+    ],
+
+    "num_angles": 180,
+    "geometry_type": "parallel3d",
+    "det_width_u": 1.0,
+    "det_width_v": 1.0,
+    "det_count_x": 512,
+    "det_count_y": 768,
+    "i0": 200,
+    "gamma": 0.005,
+    "algorithm": "SIRT3D_CUDA",
+    "show_plots": false
+}
