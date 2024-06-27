@@ -11,7 +11,7 @@ Ensure you have Conda installed on your system. You can download and install Con
 ### Steps
 1. **Create and activate a new Conda environment:**
     ```sh
-    conda create -n astra_env python=3.10
+    conda create -n fiber_phantom python=3.10
     conda activate astra_env
     ```
 
@@ -28,7 +28,7 @@ Ensure you have Conda installed on your system. You can download and install Con
 
 ## Usage
 
-1. **Run the main script (main.py). In the same folder, parameters.json should also be present:**
+1. **Run the main.py (This script is a sample script of how to use fiber_phantom). In the same folder, parameters.json should also be present:**
     ```sh
     python main.py
     ```
