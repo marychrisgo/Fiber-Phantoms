@@ -5,6 +5,7 @@ import random
 from scipy.interpolate import splprep, splev
 import nibabel as nib
 
+# Slicer reads .nii
 def save_as_nifti(array, file_path):
     nifti_img = nib.Nifti1Image(array, affine=np.eye(4))  
     nib.save(nifti_img, file_path)
@@ -42,24 +43,7 @@ def update_volume_with_filament(volume, filament, radius=1, pipe_radius=50):
     for point in filament:
         add_voxel_sphere_to_volume(volume, point, radius, pipe_radius)
 
-def plot_filaments(volume, filaments, num_filaments):
-    colors = plt.cm.jet(np.linspace(0, 1, num_filaments))
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
-
-    for idx, filament in enumerate(filaments):
-        plot_filament(ax, filament, color=colors[idx]) 
-    
-    ax.set_xlabel("X axis")
-    ax.set_ylabel("Y axis")
-    ax.set_zlabel("Z axis")
-    plt.show()
-
-def plot_filament(ax, filament, color='b'):
-    for point in filament:
-        x, y, z = point
-        ax.scatter(x, y, z, color=color, alpha=0.5)
-
+# holes in the whole fiber
 def create_cylinder_holes(volume, cylinder_params):
     for params in cylinder_params:
         center = params['center']
@@ -103,7 +87,7 @@ def generate_3d_filament(volume, generator, min_length=400, max_length=600, radi
     # Generate an initial starting point without validation
     starting_point = generator.initialize_starting_point(volume.shape, radius)
 
-    # Check if the starting point is within the necessary bounds and pipe area
+    # Check if within pipe and within bounds
     if not (is_within_bounds(starting_point, volume.shape, radius) and 
             is_within_pipe(starting_point, volume.shape[1] // 2, volume.shape[2] // 2, pipe_radius)):
         return None
@@ -111,7 +95,6 @@ def generate_3d_filament(volume, generator, min_length=400, max_length=600, radi
     # Initialize the filament with the valid starting point
     filament = [starting_point.copy()]
 
-    # Set up the direction logic for the growth of the filament
     all_directions = [[1, 0, 0], [1, 1, 0], [1, 0, 1], [0, 1, 1], [-1, -1, 0], [1, -1, 0], [1, 0, -1], [0, 1, -1], [-1, 1, 0], [-1, 0, 1], [0, -1, 1]]
     all_directions = [np.array(d) for d in all_directions if not np.array_equal(d, preferred_direction)]
 
