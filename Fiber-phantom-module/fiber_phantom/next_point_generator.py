@@ -9,7 +9,10 @@ class BasePointGenerator:
         self.grow_from_start = True
 
     def initialize_starting_point(self, volume_shape, radius):
-        self.current_point = np.array([random.randint(radius, dim - radius - 1) for dim in volume_shape])
+        x = random.randint(radius, volume_shape[0] - radius - 1)
+        y = random.randint(radius, volume_shape[1] - radius - 1)
+        z = random.randint(0, volume_shape[2] - 1)
+        self.current_point = np.array([x,y,z])
         return self.current_point
 
 
