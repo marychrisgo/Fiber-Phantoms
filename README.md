@@ -15,7 +15,7 @@ Ensure you have Conda installed on your system. You can download and install Con
     conda activate astra_env
     ```
 
-2. **Download the wheel file and install the Fiber-Phantom package:**
+2. **Download the wheel file and install the Fiber-Phantom package: (email marychrismcr@liacs.leidenuniv.nl**
     ```sh
     pip install fiber_phantom-0.1.0-py3-none-any.whl
     ```
