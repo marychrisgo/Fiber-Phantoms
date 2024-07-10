@@ -1,10 +1,12 @@
-import fiber_phantom.generate_filaments as gf
-import fiber_phantom.perform_ASTRA as tomo
 import numpy as np
 import h5py
 import json
 import time 
+
 from fiber_phantom.next_point_generator import NextPointGenerator
+from fiber_phantom.defects import DefectGenerator
+import fiber_phantom.generate_filaments as gf
+import fiber_phantom.perform_ASTRA as tomo
 
 def main():
 
@@ -21,7 +23,7 @@ def main():
             volume, 
             params["num_filaments"], 
             NextPointGenerator(mode=params["generator_mode"]), 
-            params["cylinder_params"], 
+            DefectGenerator(defect_type=params["defect_type"], params=params["reduced_params"]), # !!! params needs to be changed as well, improve this!!
             params["pipe_radius"] 
             )
 

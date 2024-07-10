@@ -3,15 +3,36 @@
     "num_volumes": 1,
     "volume_dimensions": [512, 512, 512],
     "pipe_radius": 250,
-    "num_filaments": 10,
+    "num_filaments": 1000,
     "curve_intensity": 1,
-    "generator_mode": "c_curve",
+    "generator_mode": "straight",
     "preferred_direction": [1, 0, 0],
     "bias": 1.0,
-    "cylinder_params": [
+    "defect_type": "reduced",
+    "hole_params": [
         {
-            "center": [256, 256, 256],
-            "radius": 10
+            "hole_center": [256, 256, 256],
+            "hole_radius": 100
+        }
+    ],
+    "square_notch_params": [
+        {
+            "square_notch_center": [256, 0], 
+            "square_notch_wh": 100
+        }
+    ], 
+    "v_notch_params": [
+        {
+            "v_notch_center": [256, 0], 
+            "v_notch_height": 100, 
+            "v_notch_width": 200
+        }
+    ],
+    "reduced_params": [
+        {
+            "reduced_center": [256, 256],
+            "reduced_radius": 200,
+            "reduced_slice_thickness": 50
         }
     ],
 
