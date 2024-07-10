@@ -5,6 +5,7 @@ import random
 from scipy.interpolate import splprep, splev
 import nibabel as nib
 
+
 # Slicer reads .nii
 def save_as_nifti(array, file_path):
     nifti_img = nib.Nifti1Image(array, affine=np.eye(4))  
@@ -43,27 +44,9 @@ def update_volume_with_filament(volume, filament, radius=1, pipe_radius=50):
     for point in filament:
         add_voxel_sphere_to_volume(volume, point, radius, pipe_radius)
 
-# holes in the whole fiber
-def create_cylinder_holes(volume, cylinder_params):
-    for params in cylinder_params:
-        center = params['center']
-        radius = params['radius']
-
-        x_min = 0
-        x_max = volume.shape[2]
-
-        for x in range(x_min, x_max):
-            for y in range(volume.shape[0]):
-                for z in range(volume.shape[1]):
-                    # if (y - center[1])**2 + (z - center[2])**2 <= radius**2: # cylinder  along x-axis 
-                    if (x - center[0])**2 + (y - center[1])**2 <= radius**2:
-                        volume[x, y, z] = 0
-
-    return volume
-
 ############################################################
 
-def generate_and_count_filaments(volume, num_filaments, generator, cylinder_params, pipe_radius=50, min_length=300, max_length=400, radius=3, bias=0.90, preferred_direction=[1,0,0]):
+def generate_and_count_filaments(volume, num_filaments, generator, defect_generator, pipe_radius=50, min_length=512, max_length=512, radius=3, bias=0.90, preferred_direction=[1,0,0]):
     successful_filaments = 0
     filaments = []
     total_attempts = 0
@@ -80,19 +63,18 @@ def generate_and_count_filaments(volume, num_filaments, generator, cylinder_para
     if successful_filaments < num_filaments:
         print(f"Warning: Only able to place {successful_filaments} filaments after {total_attempts} attempts.")
 
-    volume = create_cylinder_holes(volume, cylinder_params)
+    volume = defect_generator.apply(volume)
     return successful_filaments, filaments
 
-def generate_3d_filament(volume, generator, min_length=400, max_length=600, radius=3, pipe_radius=50, bias=0.90, preferred_direction=[1, 0, 0]):
-    # Generate an initial starting point without validation
+def generate_3d_filament(volume, generator, min_length=512, max_length=512, radius=3, pipe_radius=50, bias=0.90, preferred_direction=[1, 0, 0]):
+    # starting point without validation
     starting_point = generator.initialize_starting_point(volume.shape, radius)
 
-    # Check if within pipe and within bounds
+    # validation: within pipe? within bounds?
     if not (is_within_bounds(starting_point, volume.shape, radius) and 
             is_within_pipe(starting_point, volume.shape[1] // 2, volume.shape[2] // 2, pipe_radius)):
         return None
 
-    # Initialize the filament with the valid starting point
     filament = [starting_point.copy()]
 
     all_directions = [[1, 0, 0], [1, 1, 0], [1, 0, 1], [0, 1, 1], [-1, -1, 0], [1, -1, 0], [1, 0, -1], [0, 1, -1], [-1, 1, 0], [-1, 0, 1], [0, -1, 1]]
@@ -132,4 +114,3 @@ def generate_3d_filament(volume, generator, min_length=400, max_length=600, radi
         return None
 
     return filament
-
