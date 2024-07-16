@@ -24,7 +24,9 @@ def main():
             params["num_filaments"], 
             NextPointGenerator(mode=params["generator_mode"]), 
             DefectGenerator(defect_type=params["defect_type"], params=params["reduced_params"]), # !!! params needs to be changed as well, improve this!!
-            params["pipe_radius"] 
+            params["pipe_radius"],
+            params["min_length"],
+            params["max_length"]
             )
 
         volume_filename = f"filaments_volume_{i}.nii"

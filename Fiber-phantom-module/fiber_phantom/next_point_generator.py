@@ -17,12 +17,30 @@ class BasePointGenerator:
 
 
 class StraightPointGenerator(BasePointGenerator):
+    def __init__(self, angle_degrees=30): # 30 degrees for kinking stage 1
+        super().__init__()
+        self.angle = math.radians(angle_degrees)
+
     def suggest_next_point(self, filament, direction, step_size, step=None, max_length=None):
         direction = direction / np.linalg.norm(direction)
+
+        # Adjust direction based on angle
+        cos_angle = math.cos(self.angle)
+        sin_angle = math.sin(self.angle)
+
+        adjusted_direction = np.array([
+            direction[0] * cos_angle - direction[1] * sin_angle,
+            direction[0] * sin_angle + direction[1] * cos_angle,
+            direction[2]  # Z-component remains the same
+        ])
+
+        adjusted_direction /= np.linalg.norm(adjusted_direction)
+
         if self.grow_from_start:
-            self.current_point = filament[0] - direction * step_size
+            self.current_point = filament[0] - adjusted_direction * step_size
         else:
-            self.current_point = filament[-1] + direction * step_size
+            self.current_point = filament[-1] + adjusted_direction * step_size
+
         return np.round(self.current_point).astype(int)
 
 
@@ -46,7 +64,7 @@ class CCurvePointGenerator(BasePointGenerator):
 
 
 class CurvedAmplitudeBasedPointGenerator(BasePointGenerator):
-    def __init__(self, curve_amplitude=2.0):
+    def __init__(self, curve_amplitude=4.0):
         super().__init__()
         self.curve_amplitude = curve_amplitude
 
@@ -65,6 +83,7 @@ class CurvedAmplitudeBasedPointGenerator(BasePointGenerator):
         return np.round(self.current_point).astype(int)
 
 
+# Update the NextPointGenerator to include the new mode
 class NextPointGenerator:
     def __init__(self, mode='straight', **kwargs):
         self.mode = mode
@@ -85,3 +104,5 @@ class NextPointGenerator:
 
     def toggle_growth_direction(self):
         self.point_generator.grow_from_start = not self.point_generator.grow_from_start
+
+
