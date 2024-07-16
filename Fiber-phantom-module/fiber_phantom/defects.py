@@ -157,6 +157,10 @@ class Reduced(Defect):
 
         return volume
 
+class NoDefect(Defect):
+    def apply(self, volume):
+        return volume
+
 class DefectGenerator:
     def __init__(self, defect_type='hole', **kwargs):
         self.defect_type = defect_type
@@ -173,6 +177,8 @@ class DefectGenerator:
             self.defect = DoubleVNotch(params)
         elif defect_type == 'reduced':
             self.defect = Reduced(params)
+        elif defect_type == 'none':
+            self.defect = NoDefect()
         else:
             raise ValueError(f"Unknown type: {self.defect_type}")
 
