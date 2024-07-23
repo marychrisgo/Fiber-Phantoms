@@ -23,7 +23,8 @@ def main():
             volume, 
             params["num_filaments"], 
             NextPointGenerator(mode=params["generator_mode"]), 
-            DefectGenerator(defect_type=params["defect_type"], params=params["reduced_params"]), # !!! params needs to be changed as well, improve this!!
+            DefectGenerator(defect_type=params["defect_type"], 
+            params=params["reduced_params"]), # !!! params needs to be changed as well, improve this!!
             params["pipe_radius"],
             params["min_length"],
             params["max_length"]
@@ -32,28 +33,24 @@ def main():
         volume_filename = f"filaments_volume_{i}.nii"
         gf.save_as_nifti(volume, volume_filename)
 
-        # ############################################################
-        # # Comment this out if you don't want the ASTRA reconstruction part
+        if params["ASTRA_reconstruction"] == True:  
+            original_recon, noisy_recon = tomo.perform_tomography(
+                volume,
+                params["volume_dimensions"],
+                params["num_angles"],
+                params["geometry_type"],
+                params["det_width_u"],
+                params["det_width_v"],
+                params["det_count_x"],
+                params["det_count_y"],
+                params["i0"],
+                params["gamma"],
+                params["algorithm"],
+                params["show_plots"]
+            )
 
-        # original_recon, noisy_recon = tomo.perform_tomography(
-        #     volume, 
-        #     params["volume_dimensions"], 
-        #     params["num_angles"], 
-        #     params["geometry_type"],
-        #     params["det_width_u"], 
-        #     params["det_width_v"], 
-        #     params["det_count_x"],
-        #     params["det_count_y"], 
-        #     params["i0"], 
-        #     params["gamma"], 
-        #     params["algorithm"], 
-        #     params["show_plots"]
-        # )
-
-        # gf.save_as_nifti(original_recon, f"original_reconstruction_{i}.nii")
-        # gf.save_as_nifti(noisy_recon, f"noisy_reconstruction_{i}.nii")
-
-        # ############################################################
+            gf.save_as_nifti(original_recon, f"original_reconstruction_{i}.nii")
+            gf.save_as_nifti(noisy_recon, f"noisy_reconstruction_{i}.nii")
 
         with h5py.File(f"volume_and_reconstruction_{i}.hdf5", "w") as h5f:
             for key, value in params.items():

@@ -3,15 +3,14 @@
     "num_volumes": 1,
     "volume_dimensions": [512, 512, 512],
     "pipe_radius": 250,
-    "num_filaments": 10000,
+    "num_filaments": 1,
     "curve_intensity": 1,
-    "min_length": 5,
-    "max_length": 5,
-    "generator_mode": "straight",
+    "min_length": 100,
+    "max_length": 400,
+    "generator_mode": "kink_curve",
     "preferred_direction": [1, 0, 0],
     "bias": 1.0,
-    "defect_type": "reduced",
-    "void_percentage": 0.5,
+    "defect_type": "none",
     "hole_params": [
         {
             "hole_center": [256, 256, 256],
@@ -38,7 +37,8 @@
             "reduced_slice_thickness": 50
         }
     ],
-
+    
+    "ASTRA_reconstruction": true, 
     "num_angles": 180,
     "geometry_type": "parallel3d",
     "det_width_u": 1.0,
