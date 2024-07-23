@@ -46,31 +46,7 @@ def update_volume_with_filament(volume, filament, radius=1, pipe_radius=50):
 
 ############################################################
 
-def create_void(volume, center, radius):
-    for x in range(-radius, radius + 1):
-        for y in range(-radius, radius + 1):
-            for z in range(-radius, radius + 1):
-                if x**2 + y**2 + z**2 <= radius**2:
-                    ix, iy, iz = center[0] + x, center[1] + y, center[2] + z
-                    if is_within_bounds((ix, iy, iz), volume.shape, 0):
-                        volume[ix, iy, iz] = 0
-
-def generate_random_voids(volume, number_of_voids, min_void_radius=5, max_void_radius=8):
-    for _ in range(number_of_voids):
-        void_center = (
-            random.randint(0, volume.shape[0] - 1),
-            random.randint(0, volume.shape[1] - 1),
-            random.randint(0, volume.shape[2] - 1)
-        )
-        void_radius = random.randint(min_void_radius, max_void_radius)
-        create_void(volume, void_center, void_radius)
-    
-    return volume
-
-
-############################################################
-
-def generate_and_count_filaments(volume, num_filaments, generator, defect_generator, pipe_radius=50, min_length=512, max_length=700, radius=3, bias=0.90, preferred_direction=[1,0,0]):
+def generate_and_count_filaments(volume, num_filaments, generator, defect_generator, pipe_radius=50, min_length=512, max_length=512, radius=3, bias=0.90, preferred_direction=[1,0,0]):
     successful_filaments = 0
     filaments = []
     total_attempts = 0
@@ -88,10 +64,9 @@ def generate_and_count_filaments(volume, num_filaments, generator, defect_genera
         print(f"Warning: Only able to place {successful_filaments} filaments after {total_attempts} attempts.")
 
     volume = defect_generator.apply(volume)
-    generate_random_voids(volume, 300)
     return successful_filaments, filaments
 
-def generate_3d_filament(volume, generator, min_length=512, max_length=700, radius=3, pipe_radius=50, bias=0.90, preferred_direction=[1, 0, 0]):
+def generate_3d_filament(volume, generator, min_length=512, max_length=512, radius=3, pipe_radius=50, bias=0.90, preferred_direction=[1, 0, 0]):
     # starting point without validation
     starting_point = generator.initialize_starting_point(volume.shape, radius)
 
