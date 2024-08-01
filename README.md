@@ -12,7 +12,7 @@ Ensure you have Conda installed on your system. You can download and install Con
 1. **Create and activate a new Conda environment:**
     ```sh
     conda create -n fiber_phantom python=3.10
-    conda activate astra_env
+    conda activate fiber_phantom
     ```
 
 2. **Download the wheel file and install the Fiber-Phantom package: (email marychrismcr@liacs.leidenuniv.nl**
