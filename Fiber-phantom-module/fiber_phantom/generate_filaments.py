@@ -6,6 +6,12 @@ from scipy.interpolate import splprep, splev
 import nibabel as nib
 
 
+
+# Define the attenuation coefficients
+ATTENUATION_AIR = 0.0
+ATTENUATION_BACKGROUND = 0.0025
+ATTENUATION_FIBER = 1.0
+
 # Slicer reads .nii
 def save_as_nifti(array, file_path):
     nifti_img = nib.Nifti1Image(array, affine=np.eye(4))  
@@ -28,34 +34,40 @@ def can_place_sphere(center, volume, radius=1, pipe_radius=50):
             for z in range(-radius, radius + 1):
                 if x**2 + y**2 + z**2 <= radius**2:
                     ix, iy, iz = center[0] + x, center[1] + y, center[2] + z
-                    if not is_within_pipe((ix, iy, iz), center_y, center_z, pipe_radius) or volume[ix, iy, iz] == 1:
+                    if not is_within_pipe((ix, iy, iz), center_y, center_z, pipe_radius) or volume[ix, iy, iz] == ATTENUATION_FIBER:
                         return False
     return True
 
-def add_voxel_sphere_to_volume(volume, center, radius=1, pipe_radius=50):
+def add_voxel_sphere_to_volume(volume, center, radius=1, pipe_radius=50, intensity=ATTENUATION_FIBER):
     center_y, center_z = volume.shape[1] // 2, volume.shape[2] // 2
     for x in range(-radius, radius + 1):
         for y in range(-radius, radius + 1):
             for z in range(-radius, radius + 1):
                 if x**2 + y**2 + z**2 <= radius**2 and is_within_pipe((center[0]+x, center[1]+y, center[2]+z), center_y, center_z, pipe_radius):
-                    volume[center[0]+x, center[1]+y, center[2]+z] = 1
+                    volume[center[0]+x, center[1]+y, center[2]+z] = intensity
 
-def update_volume_with_filament(volume, filament, radius=1, pipe_radius=50):
+def update_volume_with_filament(volume, filament, radius=1, pipe_radius=50, intensity=ATTENUATION_FIBER):
     for point in filament:
-        add_voxel_sphere_to_volume(volume, point, radius, pipe_radius)
+        add_voxel_sphere_to_volume(volume, point, radius, pipe_radius, intensity)
+
+
 
 ############################################################
 
-def generate_and_count_filaments(volume, num_filaments, generator, defect_generator, pipe_radius=50, min_length=512, max_length=512, radius=3, bias=0.90, preferred_direction=[1,0,0]):
+
+def generate_and_count_filaments(volume, num_filaments, generator, defect_generator, pipe_radius=50, min_length=512, max_length=512, radius=4, bias=0.90, preferred_direction=[1,0,0]):
     successful_filaments = 0
     filaments = []
     total_attempts = 0
     max_total_attempts = 10000
 
+    # Initialize volume with background attenuation coefficient
+    volume.fill(ATTENUATION_BACKGROUND)
+
     while successful_filaments < num_filaments and total_attempts < max_total_attempts:
         filament = generate_3d_filament(volume, generator, min_length, max_length, radius, pipe_radius, bias, preferred_direction)
         if filament is not None:
-            update_volume_with_filament(volume, filament, radius, pipe_radius)
+            update_volume_with_filament(volume, filament, radius, pipe_radius, ATTENUATION_FIBER)
             filaments.append(filament)
             successful_filaments += 1
         total_attempts += 1
@@ -63,10 +75,11 @@ def generate_and_count_filaments(volume, num_filaments, generator, defect_genera
     if successful_filaments < num_filaments:
         print(f"Warning: Only able to place {successful_filaments} filaments after {total_attempts} attempts.")
 
+    # Add voids (air) after placing filaments
     volume = defect_generator.apply(volume)
     return successful_filaments, filaments
 
-def generate_3d_filament(volume, generator, min_length=512, max_length=512, radius=3, pipe_radius=50, bias=0.90, preferred_direction=[1, 0, 0]):
+def generate_3d_filament(volume, generator, min_length=512, max_length=512, radius=6, pipe_radius=50, bias=0.90, preferred_direction=[1, 0, 0]):
     # starting point without validation
     starting_point = generator.initialize_starting_point(volume.shape, radius)
 
