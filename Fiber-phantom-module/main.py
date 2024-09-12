@@ -15,7 +15,7 @@ def main():
         params = json.load(file)
     
     for i in range(91, 91+params["num_volumes"]):
-        volume = np.zeros(params["volume_dimensions"])
+        volume = np.zeros(params["volume_dimensions"],dtype=np.float32)
         random_seed = params["random_seed"] + i  # diff seed for each volume
         np.random.seed(random_seed) 
 
@@ -27,7 +27,8 @@ def main():
             params=params["reduced_params"]), # !!! params needs to be changed as well, improve this!!
             params["pipe_radius"],
             params["min_length"],
-            params["max_length"]
+            params["max_length"],
+            params["radius"]
             )
 
         volume_filename = f"filaments_volume_{i}.nii"
@@ -46,7 +47,9 @@ def main():
                 params["i0"],
                 params["gamma"],
                 params["algorithm"],
-                params["show_plots"]
+                params["show_plots"], 
+                params["source_origin"],
+                params["origin_det"]
             )
 
             gf.save_as_nifti(original_recon, f"original_reconstruction_{i}.nii")
