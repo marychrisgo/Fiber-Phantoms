@@ -3,24 +3,24 @@
     "num_volumes": 1,
     "volume_dimensions": [256, 256, 256],
     "pipe_radius": 125,
-    "num_filaments": 100,
+    "num_filaments":600,
     "min_length": 50,
     "max_length": 200,
-    "radius": 6,
+    "radius": 4,
     "generator_mode": "full_wave_curve",
     "preferred_direction": [1, 0, 0],
     "bias": 1.0,
     "defect_type": "none",
     "hole_params": [
         {
-            "hole_center": [256, 256, 256],
-            "hole_radius": 100
+            "hole_center": [125, 125, 125],
+            "hole_radius": 50
         }
     ],
     "square_notch_params": [
         {
-            "square_notch_center": [256, 0], 
-            "square_notch_wh": 100
+            "square_notch_center": [125, 0], 
+            "square_notch_wh": 50
         }
     ], 
     "v_notch_params": [
@@ -43,12 +43,12 @@
     "geometry_type": "parallel3d",
     "det_width_u": 1.0,
     "det_width_v": 1.0,
-    "det_count_x": 1024,
-    "det_count_y": 1024,
-    "i0": 10e5,
+    "det_count_x": 512,
+    "det_count_y": 512,
+    "i0": 55e5,
     "gamma": 0.0002, 
     "algorithm": "SIRT3D_CUDA",
     "show_plots": false,
-    "source_origin": 1000, 
+    "source_origin": 500, 
     "origin_det": 500
 }

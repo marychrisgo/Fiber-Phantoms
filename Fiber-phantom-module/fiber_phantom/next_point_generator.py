@@ -8,12 +8,23 @@ class BasePointGenerator:
         self.current_point = None
         self.grow_from_start = True
 
-    def initialize_starting_point(self, volume_shape, radius):
-        x = random.randint(radius, volume_shape[0] - radius - 1)
-        y = random.randint(radius, volume_shape[1] - radius - 1)
-        z = random.randint(0, volume_shape[2] - 1)
-        self.current_point = np.array([x,y,z])
+    def initialize_starting_point(self, volume_shape, radius, cluster_center=None, cluster_radius=None):
+        if cluster_center is not None and cluster_radius is not None:
+            # Generate a point within the cluster radius around the cluster center
+            x = random.randint(max(cluster_center[0] - cluster_radius, radius), 
+                               min(cluster_center[0] + cluster_radius, volume_shape[0] - radius - 1))
+            y = random.randint(max(cluster_center[1] - cluster_radius, radius), 
+                               min(cluster_center[1] + cluster_radius, volume_shape[1] - radius - 1))
+            z = random.randint(0, volume_shape[2] - 1)
+        else:
+            # Default random point generation
+            x = random.randint(radius, volume_shape[0] - radius - 1)
+            y = random.randint(radius, volume_shape[1] - radius - 1)
+            z = random.randint(0, volume_shape[2] - 1)
+
+        self.current_point = np.array([x, y, z])
         return self.current_point
+
 
 
 # old code, can be removed
@@ -93,9 +104,9 @@ class KinkCurvePointGenerator(BasePointGenerator):
 
 # wave frequency = 2 for half wave
 # wave frequency = 3 for full wave
-# wave amplitude = 0 for straight fibers
+# wave amplitude = 0 for straight fibers, 20 for curve
 class FullWaveCurvePointGenerator(BasePointGenerator):
-    def __init__(self, wave_center=250, wave_range=100, wave_amplitude=0, wave_frequency=2, radius=3, jaggedness_factor=0.0): 
+    def __init__(self, wave_center=125, wave_range=100, wave_amplitude=0, wave_frequency=3, radius=3, jaggedness_factor=0.0): 
         super().__init__()
         self.wave_center = wave_center
         self.wave_range = wave_range
@@ -135,11 +146,12 @@ class FullWaveCurvePointGenerator(BasePointGenerator):
 
 
 class NextPointGenerator:
-    def __init__(self, mode='straight', **kwargs):
+    def __init__(self, mode='straight', cluster_center=None, cluster_radius=None, **kwargs):
         self.mode = mode
-        if mode == 'jagged':
-            self.point_generator = JaggedPointGenerator(**kwargs)
-        elif mode == 'c_curve':
+        self.cluster_center = cluster_center
+        self.cluster_radius = cluster_radius
+
+        if mode == 'c_curve':
             self.point_generator = CCurvePointGenerator(**kwargs)
         elif mode == 'kink_curve':
             self.point_generator = KinkCurvePointGenerator(**kwargs)
@@ -149,7 +161,8 @@ class NextPointGenerator:
             raise ValueError(f"Unknown mode: {self.mode}")
 
     def initialize_starting_point(self, volume_shape, radius):
-        return self.point_generator.initialize_starting_point(volume_shape, radius)
+        # Pass clustering parameters to the point generator
+        return self.point_generator.initialize_starting_point(volume_shape, radius, self.cluster_center, self.cluster_radius)
 
     def suggest_next_point(self, filament, direction, step_size, step, max_length):
         return self.point_generator.suggest_next_point(filament, direction, step_size, step, max_length)

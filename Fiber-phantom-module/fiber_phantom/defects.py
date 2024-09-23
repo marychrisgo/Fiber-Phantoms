@@ -156,7 +156,7 @@ class Reduced(Defect):
                             volume[x, y, z] = 0
 
         return volume
-
+    
 class NoDefect(Defect):
     def apply(self, volume):
         return volume

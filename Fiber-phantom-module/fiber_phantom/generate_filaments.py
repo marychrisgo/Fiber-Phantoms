@@ -12,11 +12,6 @@ ATTENUATION_AIR = 0.0
 ATTENUATION_RESIN = 0.1
 ATTENUATION_FIBER = 1.0
 
-# # refractive indices
-# RI_AIR = 
-# RI_RESIN = 
-# RI_FIBER = 
-
 # Slicer reads .nii
 def save_as_nifti(array, file_path):
     nifti_img = nib.Nifti1Image(array, affine=np.eye(4))  
@@ -64,32 +59,78 @@ def fill_pipe_with_resin(volume, pipe_radius=50):
     for x in range(volume.shape[0]):
         for y in range(volume.shape[1]):
             for z in range(volume.shape[2]):
-                if volume[x, y, z] == 0.0:  # unfilled spaced
+                if volume[x, y, z] == 0.0:  # unfilled spaces
                     if is_within_pipe((x, y, z), center_y, center_z, pipe_radius):
-                        volume[x, y, z] = ATTENUATION_RESIN  
+                        volume[x, y, z] = ATTENUATION_RESIN  # Fill with resin
 
 
-def generate_and_count_filaments(volume, num_filaments, generator, defect_generator, pipe_radius=50, min_length=512, max_length=512, radius=5, bias=0.90, preferred_direction=[1, 0, 0]):
+def generate_and_count_filaments(volume, num_filaments, generator, defect_generator, pipe_radius=50, min_length=512, max_length=512, radius=5, bias=0.90, preferred_direction=[1, 0, 0], cluster_centers=None, cluster_radii=None, cluster_percentages=None):
+    cluster_centers = [
+        [120, 120, 120],  # Cluster 1
+        [180, 180, 180],  # Cluster 2
+        [50, 50, 50]      # Cluster 3
+    ]
+    cluster_radii = [
+        10,  # Radius for Cluster 1
+        20,  # Radius for Cluster 2
+        15   # Radius for Cluster 3
+    ]
+    cluster_percentages = [
+        20,  
+        50,  
+        30   
+    ]    
+
     successful_filaments = 0
     filaments = []
     total_attempts = 0
-    max_total_attempts = 1000
+    max_total_attempts = 100000
+
+    if cluster_centers is None or cluster_radii is None or cluster_percentages is None:
+        raise ValueError("You must provide cluster centers, radii, and percentages")
+
+    if len(cluster_centers) != len(cluster_radii) or len(cluster_centers) != len(cluster_percentages):
+        raise ValueError("The number of cluster centers, radii, and percentages must be the same")
+
+    # calculate the number of filaments per cluster based on percentages
+    filaments_per_cluster = [int((p / 100) * num_filaments) for p in cluster_percentages]
+
+    current_cluster_idx = 0
+    filaments_in_cluster = 0
 
     while successful_filaments < num_filaments and total_attempts < max_total_attempts:
+        if current_cluster_idx < len(cluster_centers):
+            if filaments_in_cluster < filaments_per_cluster[current_cluster_idx]:
+                # generate filament in the current cluster
+                generator.cluster_center = cluster_centers[current_cluster_idx]
+                generator.cluster_radius = cluster_radii[current_cluster_idx]
+                filaments_in_cluster += 1
+            else:
+                current_cluster_idx += 1
+                filaments_in_cluster = 0
+        else:
+            # sll clusters are exhausted, place filaments randomly
+            generator.cluster_center = None
+            generator.cluster_radius = None
+
+        # generate the filament
         filament = generate_3d_filament(volume, generator, min_length, max_length, radius, pipe_radius, bias, preferred_direction)
+
         if filament is not None:
             update_volume_with_filament(volume, filament, radius, pipe_radius, ATTENUATION_FIBER)
             filaments.append(filament)
             successful_filaments += 1
+
         total_attempts += 1
 
     if successful_filaments < num_filaments:
         print(f"Warning: Only able to place {successful_filaments} filaments after {total_attempts} attempts.")
 
-    # Fill inside the pipe with resin where it's still air
     fill_pipe_with_resin(volume, pipe_radius)
 
-    # Add voids (air) after placing filaments
+    num_voids = 100  
+    add_many_small_resin_voids(volume, num_voids, void_radius=1)
+
     volume = defect_generator.apply(volume)
     return successful_filaments, filaments
 
@@ -142,3 +183,41 @@ def generate_3d_filament(volume, generator, min_length=512, max_length=512, radi
         return None
 
     return filament
+
+def add_many_small_resin_voids(volume, num_voids, void_radius=1, pipe_radius=125):
+    center_y, center_z = volume.shape[1] // 2, volume.shape[2] // 2
+    voids_added = 0
+    attempts = 0
+    max_attempts = 100000
+
+    # location of resin
+    resin_positions = np.argwhere(volume == ATTENUATION_RESIN)
+
+    if len(resin_positions) == 0:
+        print("No resin areas")
+        return voids_added
+
+    while voids_added < num_voids and attempts < max_attempts:
+        random_index = random.randint(0, len(resin_positions) - 1)
+        x, y, z = resin_positions[random_index]
+
+        for i in range(-void_radius, void_radius + 1):
+            for j in range(-void_radius, void_radius + 1):
+                for k in range(-void_radius, void_radius + 1):
+                    if i**2 + j**2 + k**2 <= void_radius**2:
+                        xi, yj, zk = x + i, y + j, z + k
+                        if (0 <= xi < volume.shape[0] and
+                            0 <= yj < volume.shape[1] and
+                            0 <= zk < volume.shape[2] and
+                            is_within_pipe((xi, yj, zk), center_y, center_z, pipe_radius)):
+                            volume[xi, yj, zk] = 0.0  # Set void intensity back to 'air' 
+
+        voids_added += 1
+        attempts += 1
+
+    if voids_added < num_voids:
+        print(f"Warning: Only able to add {voids_added} small resin voids after {attempts} attempts.")
+    else:
+        print(f"Successfully added {voids_added} small resin voids.")
+
+    return voids_added
