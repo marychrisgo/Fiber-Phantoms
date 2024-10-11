@@ -5,12 +5,10 @@ import random
 from scipy.interpolate import splprep, splev
 import nibabel as nib
 
-
-
 # Define the attenuation coefficients
 ATTENUATION_AIR = 0.0
-ATTENUATION_RESIN = 0.1
-ATTENUATION_FIBER = 1.0
+ATTENUATION_RESIN = 100.0
+ATTENUATION_FIBER = 255.0
 
 # Slicer reads .nii
 def save_as_nifti(array, file_path):
@@ -27,73 +25,66 @@ def is_within_pipe(point, center_y, center_z, pipe_radius):
     y, z = point[1], point[2]
     return ((y - center_y)**2 + (z - center_z)**2) <= pipe_radius**2
 
-def can_place_sphere(center, volume, radius=1, pipe_radius=50):
+def can_place_sphere(center, volume, radius, pipe_radius=50):
     center_y, center_z = volume.shape[1] // 2, volume.shape[2] // 2
     for x in range(-radius, radius + 1):
         for y in range(-radius, radius + 1):
             for z in range(-radius, radius + 1):
                 if x**2 + y**2 + z**2 <= radius**2:
                     ix, iy, iz = center[0] + x, center[1] + y, center[2] + z
+                    if not is_within_bounds((ix, iy, iz), volume.shape, 0):
+                        return False
                     if not is_within_pipe((ix, iy, iz), center_y, center_z, pipe_radius) or volume[ix, iy, iz] == ATTENUATION_FIBER:
                         return False
     return True
 
-def add_voxel_sphere_to_volume(volume, center, radius=1, pipe_radius=50, intensity=ATTENUATION_FIBER):
+def add_voxel_sphere_to_volume(volume, center, radius, pipe_radius=50, intensity=ATTENUATION_FIBER):
     center_y, center_z = volume.shape[1] // 2, volume.shape[2] // 2
     for x in range(-radius, radius + 1):
         for y in range(-radius, radius + 1):
             for z in range(-radius, radius + 1):
-                if x**2 + y**2 + z**2 <= radius**2 and is_within_pipe((center[0]+x, center[1]+y, center[2]+z), center_y, center_z, pipe_radius):
-                    volume[center[0]+x, center[1]+y, center[2]+z] = intensity
+                if x**2 + y**2 + z**2 <= radius**2:
+                    ix, iy, iz = center[0] + x, center[1] + y, center[2] + z
+                    if is_within_bounds((ix, iy, iz), volume.shape, 0) and is_within_pipe((ix, iy, iz), center_y, center_z, pipe_radius):
+                        volume[ix, iy, iz] = intensity
 
-def update_volume_with_filament(volume, filament, radius=1, pipe_radius=50, intensity=ATTENUATION_FIBER):
+def update_volume_with_filament(volume, filament, radius, pipe_radius=50, intensity=ATTENUATION_FIBER):
     for point in filament:
         add_voxel_sphere_to_volume(volume, point, radius, pipe_radius, intensity)
-
-
-
-############################################################
 
 def fill_pipe_with_resin(volume, pipe_radius=50):
     center_y, center_z = volume.shape[1] // 2, volume.shape[2] // 2
     for x in range(volume.shape[0]):
         for y in range(volume.shape[1]):
             for z in range(volume.shape[2]):
-                if volume[x, y, z] == 0.0:  # unfilled spaces
-                    if is_within_pipe((x, y, z), center_y, center_z, pipe_radius):
-                        volume[x, y, z] = ATTENUATION_RESIN  # Fill with resin
+                if volume[x, y, z] == 0.0 and is_within_pipe((x, y, z), center_y, center_z, pipe_radius):
+                    volume[x, y, z] = ATTENUATION_RESIN
+
+def generate_radius_normal(radius_range, mean, std_dev):
+    radius = np.random.normal(loc=mean, scale=std_dev)
+    # Clamp the value between the min and max of the range
+    radius = max(radius_range[0], min(radius_range[1], radius))
+    return int(radius)
 
 
-def generate_and_count_filaments(volume, num_filaments, generator, defect_generator, pipe_radius=50, min_length=512, max_length=512, radius=5, bias=0.90, preferred_direction=[1, 0, 0], cluster_centers=None, cluster_radii=None, cluster_percentages=None):
-    cluster_centers = [
-        [120, 120, 120],  # Cluster 1
-        [180, 180, 180],  # Cluster 2
-        [50, 50, 50]      # Cluster 3
+def generate_and_count_filaments(volume, num_filaments, generator, defect_generator, pipe_radius=50, min_length=512, max_length=512, radius_range=(1, 6), bias=0.90, preferred_direction=[1, 0, 0], cluster_centers=None, cluster_radii=None, cluster_percentages=None):
+    cluster_centers = cluster_centers or [
+        [120, 120, 120],
+        [180, 180, 180],
+        [50, 50, 50]
     ]
-    cluster_radii = [
-        10,  # Radius for Cluster 1
-        20,  # Radius for Cluster 2
-        15   # Radius for Cluster 3
-    ]
-    cluster_percentages = [
-        20,  
-        50,  
-        30   
-    ]    
-
-    successful_filaments = 0
-    filaments = []
-    total_attempts = 0
-    max_total_attempts = 100000
-
-    if cluster_centers is None or cluster_radii is None or cluster_percentages is None:
-        raise ValueError("You must provide cluster centers, radii, and percentages")
+    cluster_radii = cluster_radii or [10, 20, 15]
+    cluster_percentages = cluster_percentages or [20, 50, 30]
 
     if len(cluster_centers) != len(cluster_radii) or len(cluster_centers) != len(cluster_percentages):
         raise ValueError("The number of cluster centers, radii, and percentages must be the same")
 
-    # calculate the number of filaments per cluster based on percentages
     filaments_per_cluster = [int((p / 100) * num_filaments) for p in cluster_percentages]
+    
+    successful_filaments = 0
+    filaments = []
+    total_attempts = 0
+    max_total_attempts = 10000
 
     current_cluster_idx = 0
     filaments_in_cluster = 0
@@ -101,7 +92,6 @@ def generate_and_count_filaments(volume, num_filaments, generator, defect_genera
     while successful_filaments < num_filaments and total_attempts < max_total_attempts:
         if current_cluster_idx < len(cluster_centers):
             if filaments_in_cluster < filaments_per_cluster[current_cluster_idx]:
-                # generate filament in the current cluster
                 generator.cluster_center = cluster_centers[current_cluster_idx]
                 generator.cluster_radius = cluster_radii[current_cluster_idx]
                 filaments_in_cluster += 1
@@ -109,15 +99,20 @@ def generate_and_count_filaments(volume, num_filaments, generator, defect_genera
                 current_cluster_idx += 1
                 filaments_in_cluster = 0
         else:
-            # sll clusters are exhausted, place filaments randomly
             generator.cluster_center = None
             generator.cluster_radius = None
+        
+        # uniform distribution
+        # filament_radius = random.randint(radius_range[0], radius_range[1])
 
-        # generate the filament
-        filament = generate_3d_filament(volume, generator, min_length, max_length, radius, pipe_radius, bias, preferred_direction)
+        # normal distribution
+        mean = (radius_range[0] + radius_range[1]) / 2
+        filament_radius = generate_radius_normal(radius_range, mean=mean, std_dev=0.5)
+
+        filament = generate_3d_filament(volume, generator, min_length, max_length, filament_radius, pipe_radius, bias, preferred_direction)
 
         if filament is not None:
-            update_volume_with_filament(volume, filament, radius, pipe_radius, ATTENUATION_FIBER)
+            update_volume_with_filament(volume, filament, filament_radius, pipe_radius, ATTENUATION_FIBER)
             filaments.append(filament)
             successful_filaments += 1
 
@@ -128,53 +123,51 @@ def generate_and_count_filaments(volume, num_filaments, generator, defect_genera
 
     fill_pipe_with_resin(volume, pipe_radius)
 
-    num_voids = 100  
-    add_many_small_resin_voids(volume, num_voids, void_radius=1)
-
     volume = defect_generator.apply(volume)
+
+    num_voids = 100  
+    add_many_small_resin_voids(volume, num_voids, pipe_radius, void_radius=1)
     return successful_filaments, filaments
 
+def generate_3d_filament(volume, generator, min_length=512, max_length=512, filament_radius=3, pipe_radius=50, bias=0.50, preferred_direction=[1, 0, 0]):
+    starting_point = generator.initialize_starting_point(volume.shape, filament_radius)
 
-def generate_3d_filament(volume, generator, min_length=512, max_length=512, radius=6, pipe_radius=50, bias=0.90, preferred_direction=[1, 0, 0]):
-    # starting point without validation
-    starting_point = generator.initialize_starting_point(volume.shape, radius)
-
-    # validation: within pipe? within bounds?
-    if not (is_within_bounds(starting_point, volume.shape, radius) and 
-            is_within_pipe(starting_point, volume.shape[1] // 2, volume.shape[2] // 2, pipe_radius)):
+    if not (is_within_bounds(starting_point, volume.shape, filament_radius) and 
+            is_within_pipe(starting_point, volume.shape[1] // 2, volume.shape[2] // 2, pipe_radius) and
+            can_place_sphere(starting_point, volume, filament_radius, pipe_radius)):
         return None
 
-    filament = [starting_point.copy()]
+    filament = [starting_point]
 
-    all_directions = [[1, 0, 0], [1, 1, 0], [1, 0, 1], [0, 1, 1], [-1, -1, 0], [1, -1, 0], [1, 0, -1], [0, 1, -1], [-1, 1, 0], [-1, 0, 1], [0, -1, 1]]
+    all_directions = [
+        [1, 0, 0], [1, 1, 0], [1, 0, 1], [0, 1, 1], [-1, -1, 0], [1, -1, 0],
+        [1, 0, -1], [0, 1, -1], [-1, 1, 0], [-1, 0, 1], [0, -1, 1]
+    ]
     all_directions = [np.array(d) for d in all_directions if not np.array_equal(d, preferred_direction)]
 
     num_biased = int(bias * 100)
-    num_other = 100 - num_biased
-    num_other = min(num_other, len(all_directions))
+    num_other = min(100 - num_biased, len(all_directions))
 
-    biased_direction_choices = [np.array(preferred_direction)] * num_biased
-    biased_direction_choices.extend(random.sample(all_directions, k=num_other))
+    biased_direction_choices = [np.array(preferred_direction)] * num_biased + random.sample(all_directions, k=num_other)
 
     step_size = 1
     direction = np.array(preferred_direction).astype(float)
 
-    num_steps = max_length * 10
-    for step in range(num_steps):
-        next_point = generator.suggest_next_point(filament, direction, step_size, step, max_length)
+    for _ in range(max_length * 10):
+        next_point = generator.suggest_next_point(filament, direction, step_size, len(filament), max_length)
 
-        if not (is_within_bounds(next_point, volume.shape, radius) and 
+        if not (is_within_bounds(next_point, volume.shape, filament_radius) and 
                 is_within_pipe(next_point, volume.shape[1] // 2, volume.shape[2] // 2, pipe_radius) and 
-                can_place_sphere(next_point, volume, radius, pipe_radius)):
-            if len(filament) >= min_length:
-                break
-            else:
-                return None
+                can_place_sphere(next_point, volume, filament_radius, pipe_radius)):
+            break
 
         if generator.point_generator.grow_from_start:
             filament.insert(0, next_point)
         else:
             filament.append(next_point)
+
+        if len(filament) >= max_length:
+            break
 
         generator.toggle_growth_direction()
         direction = random.choice(biased_direction_choices).astype(float)
@@ -184,13 +177,12 @@ def generate_3d_filament(volume, generator, min_length=512, max_length=512, radi
 
     return filament
 
-def add_many_small_resin_voids(volume, num_voids, void_radius=1, pipe_radius=125):
+def add_many_small_resin_voids(volume, num_voids, pipe_radius, void_radius=1):
     center_y, center_z = volume.shape[1] // 2, volume.shape[2] // 2
     voids_added = 0
     attempts = 0
-    max_attempts = 100000
+    max_attempts = 1000000
 
-    # location of resin
     resin_positions = np.argwhere(volume == ATTENUATION_RESIN)
 
     if len(resin_positions) == 0:
@@ -210,7 +202,7 @@ def add_many_small_resin_voids(volume, num_voids, void_radius=1, pipe_radius=125
                             0 <= yj < volume.shape[1] and
                             0 <= zk < volume.shape[2] and
                             is_within_pipe((xi, yj, zk), center_y, center_z, pipe_radius)):
-                            volume[xi, yj, zk] = 0.0  # Set void intensity back to 'air' 
+                            volume[xi, yj, zk] = ATTENUATION_AIR
 
         voids_added += 1
         attempts += 1

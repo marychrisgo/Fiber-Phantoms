@@ -4,10 +4,10 @@
     "volume_dimensions": [256, 256, 256],
     "pipe_radius": 125,
     "num_filaments":600,
-    "min_length": 50,
+    "min_length": 80,
     "max_length": 200,
-    "radius": 4,
-    "generator_mode": "full_wave_curve",
+    "radius_range": [4,4],
+    "generator_mode": "straight",
     "preferred_direction": [1, 0, 0],
     "bias": 1.0,
     "defect_type": "none",
@@ -25,16 +25,16 @@
     ], 
     "v_notch_params": [
         {
-            "v_notch_center": [256, 0], 
-            "v_notch_height": 100, 
-            "v_notch_width": 200
+            "v_notch_center": [125, 0], 
+            "v_notch_height": 50, 
+            "v_notch_width": 100
         }
     ],
     "reduced_params": [
         {
-            "reduced_center": [256, 256],
-            "reduced_radius": 200,
-            "reduced_slice_thickness": 50
+            "reduced_center": [125, 125],
+            "reduced_radius": 100,
+            "reduced_slice_thickness": 25
         }
     ],
     
@@ -45,10 +45,10 @@
     "det_width_v": 1.0,
     "det_count_x": 512,
     "det_count_y": 512,
-    "i0": 55e5,
+    "i0": 10e5,
     "gamma": 0.0002, 
     "algorithm": "SIRT3D_CUDA",
     "show_plots": false,
-    "source_origin": 500, 
+    "source_origin": 1000, 
     "origin_det": 500
 }
