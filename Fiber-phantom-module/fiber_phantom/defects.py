@@ -16,7 +16,7 @@ class Hole(Defect):
             for x in range(volume.shape[0]):
                 for y in range(volume.shape[1]): 
                     for z in range(volume.shape[2]):
-                        if (x - center[0])**2 + (y - center[1])**2 <= radius**2:
+                        if (x - center[0])**2 + (y - center[1])**2 <= radius**2: #distance bet point and the center of the hole
                             volume[x, y, z] = 0
 
         return volume
@@ -156,7 +156,7 @@ class Reduced(Defect):
                             volume[x, y, z] = 0
 
         return volume
-
+    
 class NoDefect(Defect):
     def apply(self, volume):
         return volume
