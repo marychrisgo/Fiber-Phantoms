@@ -3,7 +3,12 @@
 ### Table of Contents
 
 [Description](https://github.com/marychrisgo/Fiber-Phantoms#description)
+
 [Installation](https://github.com/marychrisgo/Fiber-Phantoms#installation)
+
+[Usage](https://github.com/marychrisgo/Fiber-Phantoms#usage)
+
+[License](https://github.com/marychrisgo/Fiber-Phantoms#license)
 
 ## Description
 Fiber-Phantoms is a Python package for generating fiber phantoms and doing virtual X-ray scanning using the ASTRA Toolbox. This package facilitates the creation and manipulation of complex phantom structures for use in various scientific and engineering applications.
