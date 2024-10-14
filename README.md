@@ -7,6 +7,13 @@
 [Installation](https://github.com/marychrisgo/Fiber-Phantoms#installation)
 
 [Usage](https://github.com/marychrisgo/Fiber-Phantoms#usage)
+- Directory Structure
+- Description of Files
+- How to run
+- ASTRA documentation
+- Defects
+- Curve Intensity
+- Pre-defined Parameters
 
 [License](https://github.com/marychrisgo/Fiber-Phantoms#license)
 
@@ -92,7 +99,7 @@ Description of files
   - `parameters.json` - where the user sets the parameters both for the volume and scanning configurations
 
 * ASTRA documentation
-  See [link](https://astra-toolbox.com/index.html)
+  - See [link](https://astra-toolbox.com/index.html)
 * Defects
 * Curve intensity
 * Pre-defined parameters 
