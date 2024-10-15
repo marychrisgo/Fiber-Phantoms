@@ -101,21 +101,69 @@ Description of files
 * ASTRA documentation
   - See [link](https://astra-toolbox.com/index.html)
 * Defects
-  - ![image](https://github.com/user-attachments/assets/7a6811fa-e469-433c-a8b3-1afe0dd90b12)
+  1. **hole**
+     - ![image](https://github.com/user-attachments/assets/b0b2030d-7ec0-49c9-9e52-1a302e7722a7)
+     - In the `parameters.json` file, the following lines can be adjusted based on where you want to position the hole. For a volume of [256, 256, 256], the example below places the hole in the center, which is why the parameters are set as follows:
+      ```
+      "hole_params": [
+        {
+            "hole_center": [125, 125, 125],
+            "hole_radius": 50
+        }
+      ]
+      ```
+  2. **square notch & double square notch**
+     - ![image](https://github.com/user-attachments/assets/bace3b39-539a-4980-9d39-74279136d721)
+     - The parameters set in `parameters.json` are for the square notch. For double square notch, it uses the same parameters but it is applied on the opposite side. 
+      ```
+      "square_notch_params": [
+        {
+            "square_notch_center": [125, 0], 
+            "square_notch_wh": 50
+        }
+      ]
+      ```
+  3. **v-notch and  double v-notch**
+     - ![image](https://github.com/user-attachments/assets/c04e1f89-3a7f-4c86-99c9-63f3b285d643)
+     - The parameters are as follows:
+    ```
+    "v_notch_params": [
+        {
+            "v_notch_center": [125, 0], 
+            "v_notch_height": 50, 
+            "v_notch_width": 100
+        }
+    ]
+    ```
 
- 
-  In the `parameters.json` file, the following lines can be adjusted based on where you want to position the hole. For a volume of [256, 256, 256], the example below places the hole in the center, which is why the parameters are set as follows:
-  ```
-  "hole_params": [
-    {
-        "hole_center": [125, 125, 125],
-        "hole_radius": 50
-    }
-  ]
-  ```
+  5. **reduced**
+     - ![image](https://github.com/user-attachments/assets/3265d54b-5a62-4b82-a1cd-3ade959f1053)
+     - 'reduced_slice_thickness' is the vertical length; 'reduced_radius' is the remaining raduis of the inner fibers
+    ```
+    "reduced_params": [
+        {
+            "reduced_center": [125, 125],
+            "reduced_radius": 100,
+            "reduced_slice_thickness": 25
+        }
+    ]
+    ```
 
 * Curve intensity
-* Pre-defined parameters 
+  - ![image](https://github.com/user-attachments/assets/bfd9e641-2d8d-4ea5-a96a-5d3f60e834c8)
+  - The curve intesities are the following: c_curve, kink_curve, straight, full_wave_curve, half_wave_curve.
+  - Currently, the curves are set for [256, 256, 256] volume. But if the user want to customize this with a bigger or smaller volume, see `next_point_generator.py`.
+  - Each class is the desired curve and the "wave_center", "wave_amplitude", "wave_frequency" can be change in the initialization.
+* Other samples
+  - ![image](https://github.com/user-attachments/assets/4a1abf84-b6a6-4ca8-aebc-a83fa7429705)
+  - The photo above exhibits the flexibility of the simulator to customize the volume. This volume is a c_curve with the curve_center outside of the volume dimension. Because of how it was parametrize, we technically see only half of the 'c_curve'.
+
+    
+* Pre-defined parameters
+  - See `generate_filaments.py`
+  - max_attempts : maximum attempt of the script in finding a fiber point that does not collide with another fiber point
+  - num_voids: at the end of the generation of the volume, there are 100 small spheres generated along the resin. This small spheres in the resin mimics voids found in the sample.
+  - cluster_centers: there are also pre-defined location of cluster_centers which are more prominent if you have spaced fibers
 
 
 ## License
