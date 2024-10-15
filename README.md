@@ -101,6 +101,18 @@ Description of files
 * ASTRA documentation
   - See [link](https://astra-toolbox.com/index.html)
 * Defects
+  ![image](https://github.com/user-attachments/assets/7a6811fa-e469-433c-a8b3-1afe0dd90b12)
+
+  In `parameters.json`,  these lines can be changed depending on where you want to put the hole. 
+  ```
+  "hole_params": [
+    {
+        "hole_center": [125, 125, 125],
+        "hole_radius": 50
+    }
+  ]
+  ```
+
 * Curve intensity
 * Pre-defined parameters 
 
