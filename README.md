@@ -101,9 +101,10 @@ Description of files
 * ASTRA documentation
   - See [link](https://astra-toolbox.com/index.html)
 * Defects
-  ![image](https://github.com/user-attachments/assets/7a6811fa-e469-433c-a8b3-1afe0dd90b12)
+  - ![image](https://github.com/user-attachments/assets/7a6811fa-e469-433c-a8b3-1afe0dd90b12)
 
-  In `parameters.json`,  these lines can be changed depending on where you want to put the hole. 
+ 
+  In the `parameters.json` file, the following lines can be adjusted based on where you want to position the hole. For a volume of [256, 256, 256], the example below places the hole in the center, which is why the parameters are set as follows:
   ```
   "hole_params": [
     {
