@@ -157,6 +157,8 @@ Description of files
 * Other samples
   - ![image](https://github.com/user-attachments/assets/4a1abf84-b6a6-4ca8-aebc-a83fa7429705)
   - The photo above exhibits the flexibility of the simulator to customize the volume. This volume is a c_curve with the curve_center outside of the volume dimension. Because of how it was parametrize, we technically see only half of the 'c_curve'.
+  - ![image](https://github.com/user-attachments/assets/dbe80ccb-c49e-4335-93a5-a92087cedc78)
+  - The photo above is another sample of kinking with its axial slice. Snce the fibers are tilted, we see it's axial slice to have elongated circles instead.
 
     
 * Pre-defined parameters
