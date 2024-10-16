@@ -32,7 +32,7 @@ Ensure you have Conda installed on your system. You can download and install Con
     conda activate fiber_phantom
     ```
 
-2. **Download the wheel file and install the [Fiber-Phantom package](https://drive.google.com/file/d/1RDukIsBO8gBr5zlT2T6C49T0wjlQeKwY/view?usp=sharing):**
+2. **Download the wheel file and install the [Fiber-Phantom package]([https://drive.google.com/file/d/1RDukIsBO8gBr5zlT2T6C49T0wjlQeKwY/view?usp=sharing](https://drive.google.com/file/d/1RDukIsBO8gBr5zlT2T6C49T0wjlQeKwY/view?usp=drive_link)):**
     ```sh
     pip install fiber_phantom-0.1.0-py3-none-any.whl
     ```
