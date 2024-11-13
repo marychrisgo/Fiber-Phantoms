@@ -10,41 +10,35 @@ import fiber_phantom.generate_filaments as gf
 import fiber_phantom.perform_ASTRA as tomo
 
 def main():
-    # Start the timer
     start_time = time.time()
 
-    # Create the FiberDataset folder if it doesn't exist
     dataset_folder = "FiberDataset"
     if not os.path.exists(dataset_folder):
         os.makedirs(dataset_folder)
 
-    # Load parameters from the JSON file
     with open("fiber_phantom/parameters.json", "r") as file:
         params = json.load(file)
     
-    # Loop through volumes to generate and save
     for i in range(200, 200 + params["num_volumes"]):
         volume = np.zeros(params["volume_dimensions"], dtype=np.float32)
         random_seed = params["random_seed"] + i  # different seed for each volume
         np.random.seed(random_seed)
 
-        # Generate filaments in the volume
         gf.generate_and_count_filaments(
             volume, 
             params["num_filaments"], 
-            NextPointGenerator(mode=params["generator_mode"]), 
-            DefectGenerator(defect_type=params["defect_type"], params=params["square_notch_params"]), #CHANGE THIS!!!
+            NextPointGenerator(mode=params["generator_mode"]), #, volume_shape=params["volume_dimensions"]), # volume_shape can be removed if not 'straight'
+            DefectGenerator(defect_type=params["defect_type"], params=params["hole_params"]), # change 'hole_params' to other defect parameters
             params["pipe_radius"],
             params["min_length"],
             params["max_length"], 
-            params["radius"]
+            params["radius_range"],
+            params["bias"]
         )
 
-        # Save the volume in the FiberDataset folder
         volume_filename = os.path.join(dataset_folder, f"filaments_volume_{i}.nii")
         gf.save_as_nifti(volume, volume_filename)
 
-        # If ASTRA reconstruction is enabled, perform it and save results
         if params["ASTRA_reconstruction"]:
             original_recon, noisy_recon = tomo.perform_tomography(
                 volume,
@@ -56,7 +50,6 @@ def main():
                 params["det_count_x"],
                 params["det_count_y"],
                 params["i0"],
-                params["gamma"],
                 params["algorithm"],
                 params["show_plots"], 
                 params["source_origin"],
@@ -74,7 +67,6 @@ def main():
                 h5f.attrs[key] = str(value)
             h5f.attrs["random_seed"] = str(random_seed)
 
-    # End the timer and print elapsed time
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Total processing time: {elapsed_time} seconds")
