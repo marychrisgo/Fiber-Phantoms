@@ -18,7 +18,7 @@
 [License](https://github.com/marychrisgo/Fiber-Phantoms#license)
 
 ## Description
-*FibreSimulator* is a Python tool for generating uni-directional fiber phantoms and doing virtual X-ray scanning using the ASTRA Toolbox. Included in the repository are the source-code and the code manual/documentation. 
+*FibreSimulator* is a Python tool for generating uni-directional fiber phantoms and simulating X-ray scanning using the ASTRA Toolbox. Included in the repository are the source-code and the code manual/documentation. 
 
 ## Installation
 
@@ -26,21 +26,32 @@
 Ensure you have Conda installed on your system. You can download and install Conda from [here](https://docs.conda.io/en/latest/miniconda.html).
 
 ### Steps
-1. **Create and activate a new Conda environment:**
+1. Clone the repository
+   ```sh
+    git clone https://github.com/marychrisgo/Fiber-Phantoms.git
+   ```
+2. Navigate to the Project Directory
+   ```sh
+    cd Fiber-Phantoms
+   ```   
+4. **Create and activate a new Conda environment:**
     ```sh
     conda create -n fiber_phantom python=3.10
     conda activate fiber_phantom
     ```
 
-2. **Download the wheel file and install the [Fiber-Phantom package](https://drive.google.com/file/d/1RDukIsBO8gBr5zlT2T6C49T0wjlQeKwY/view?usp=drive_link):**
-    ```sh
-    pip install fiber_phantom-0.1.0-py3-none-any.whl
-    ```
-
-3. **Install ASTRA using Conda:**
+5. **Install Dependencies**
+   ```sh
+   pip install -r requirements.txt
+   ```
+7. **Install ASTRA using Conda:**
     ```sh
     conda install -c astra-toolbox astra-toolbox
     ```
+8. **Run the Application**
+   ```sh
+    python main.py
+   ```
 
 
 ## Usage
