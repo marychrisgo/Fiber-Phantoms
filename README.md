@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/759254051.svg)](https://doi.org/10.5281/zenodo.14134577)
+
 # Fiber-Phantoms
 
 ### Table of Contents
