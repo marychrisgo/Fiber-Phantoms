@@ -3,17 +3,17 @@
     "num_volumes": 1,
     "volume_dimensions": [256, 256, 256],
     "pipe_radius": 125,
-    "num_filaments":600,
+    "num_filaments":1000,
     "min_length": 80,
     "max_length": 200,
-    "radius_range": [4,4],
-    "generator_mode": "straight",
+    "radius_range": [3,6],
+    "generator_mode": "kink_curve",
     "preferred_direction": [1, 0, 0],
     "bias": 1.0,
-    "defect_type": "none",
+    "defect_type": "hole",
     "hole_params": [
         {
-            "hole_center": [125, 125, 125],
+            "hole_center": [200, 125, 125],
             "hole_radius": 50
         }
     ],
@@ -38,15 +38,14 @@
         }
     ],
     
-    "ASTRA_reconstruction": false, 
+    "ASTRA_reconstruction": true, 
     "num_angles": 180,
     "geometry_type": "parallel3d",
     "det_width_u": 1.0,
     "det_width_v": 1.0,
     "det_count_x": 512,
     "det_count_y": 512,
-    "i0": 10e5,
-    "gamma": 0.0002, 
+    "i0": 10e6,
     "algorithm": "SIRT3D_CUDA",
     "show_plots": false,
     "source_origin": 1000, 

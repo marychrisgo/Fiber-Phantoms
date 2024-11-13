@@ -10,11 +10,24 @@ class BasePointGenerator:
 
     def initialize_starting_point(self, volume_shape, radius, cluster_center=None, cluster_radius=None):
         if cluster_center is not None and cluster_radius is not None:
-            x = random.randint(max(cluster_center[0] - cluster_radius, radius), 
-                               min(cluster_center[0] + cluster_radius, volume_shape[0] - radius - 1))
-            y = random.randint(max(cluster_center[1] - cluster_radius, radius), 
-                               min(cluster_center[1] + cluster_radius, volume_shape[1] - radius - 1))
-            z = random.randint(0, volume_shape[2] - 1)
+            # Calculate the bounds for x, y, and z
+            lower_bound_x = max(cluster_center[0] - cluster_radius, radius)
+            upper_bound_x = min(cluster_center[0] + cluster_radius, volume_shape[0] - radius - 1)
+
+            lower_bound_y = max(cluster_center[1] - cluster_radius, radius)
+            upper_bound_y = min(cluster_center[1] + cluster_radius, volume_shape[1] - radius - 1)
+
+            # Add checks for valid ranges
+            if lower_bound_x > upper_bound_x:
+                lower_bound_x, upper_bound_x = upper_bound_x, lower_bound_x
+            if lower_bound_y > upper_bound_y:
+                lower_bound_y, upper_bound_y = upper_bound_y, lower_bound_y
+
+            # Avoid empty ranges by ensuring bounds are valid
+            x = lower_bound_x if lower_bound_x == upper_bound_x else random.randint(lower_bound_x, upper_bound_x)
+            y = lower_bound_y if lower_bound_y == upper_bound_y else random.randint(lower_bound_y, upper_bound_y)
+            z = random.randint(0, volume_shape[2] - 1)  # No need to change z unless there are similar issues
+
         else:
             # Default random point generation
             x = random.randint(radius, volume_shape[0] - radius - 1)
@@ -23,6 +36,7 @@ class BasePointGenerator:
 
         self.current_point = np.array([x, y, z])
         return self.current_point
+
 
 
 class CCurvePointGenerator(BasePointGenerator):
@@ -52,7 +66,7 @@ class CCurvePointGenerator(BasePointGenerator):
 
 
 class KinkCurvePointGenerator(BasePointGenerator):
-    def __init__(self, bend_center=250, transition_range=20, return_center=270, return_transition_range=20, radius=3, jaggedness_factor=0.0):
+    def __init__(self, bend_center=125, transition_range=20, return_center=150, return_transition_range=20, radius=3, jaggedness_factor=0.01):
         super().__init__()
         self.bend_center = bend_center
         self.transition_range = transition_range

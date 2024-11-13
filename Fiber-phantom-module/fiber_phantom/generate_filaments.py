@@ -125,7 +125,7 @@ def generate_and_count_filaments(volume, num_filaments, generator, defect_genera
 
     volume = defect_generator.apply(volume)
 
-    num_voids = 100  
+    num_voids = 50  
     add_many_small_resin_voids(volume, num_voids, pipe_radius, void_radius=1)
     return successful_filaments, filaments
 
