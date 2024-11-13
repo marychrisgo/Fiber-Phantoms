@@ -80,14 +80,13 @@ Description of files
 | defect_type            | either 'hole', 'square_notch', 'double_square_notch', 'v_notch', 'double_v_notch', 'reduced', 'none'                          |
 |                        |                                                                                                                               |
 | ASTRA_reconstruction   | whether ASTRA toolbox will be used for reconstruction:'True' or 'False'                                                      |
-| num_angles             | number of projection angles used for tomography                                                                               |
+| num_angles             | number of projections over 180 degree range                                                                               |
 | geometry_type          | specifies the geometry of the beam: 'parallel3d' or 'cone'                                                                    |
 | det_width_u            | distance between the center of two horizontally adjacent detector pixels                                                      |
 | det_width_v            | distance between the centers of two vertically adjacent detector pixels                                                       |
 | det_count_x            | number of detector rows in a single projection                                                                                |
 | det_count_y            | number of detector columns in a single projection                                                                             |
 | i0                     | Initial intensity of the X-ray beam used for simulation                                                                       |
-| gamma                  | noise in the simulation                                                                                                       |
 | algorithm              | reconstruction algorithm: 'FDK_CUDA', 'SIRT3D_CUDA'                                                                           |
 | show_plots             | Enable or disable generation of plots for checking: 'True' or 'False'                                                         |
 | source_original        | distance between  the source and the center of rotation                                                                       |
