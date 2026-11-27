@@ -9,13 +9,15 @@ setup(
     author='MC, Daan, Joost',
     author_email='marychrismcr@liacs.leidenuniv.nl',
     packages=find_packages(include=['fiber_phantom', 'fiber_phantom.*']),
+    package_data={'fiber_phantom': ['parameters.json']},
+    python_requires='>=3.10',
     install_requires=[
         'numpy==1.24.2',
         'h5py==3.8.0',
         'matplotlib==3.7.1',
         'nibabel==5.2.1',
-        'scipy==1.13.1'
-        # Add other dependencies here
+        'scipy==1.13.1',
+        'astra-toolbox==2.5.0',
     ],
     entry_points={
         'console_scripts': [

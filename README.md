@@ -25,35 +25,45 @@
 ## Installation
 
 ### Prerequisites
-Ensure you have Conda installed on your system. You can download and install Conda from [here](https://docs.conda.io/en/latest/miniconda.html).
+- Conda, which you can download from [here](https://docs.conda.io/en/latest/miniconda.html).
+- An NVIDIA GPU with a recent driver, for the X-ray simulation and reconstruction (`"ASTRA_reconstruction": true`). Phantom generation without a GPU works if you set `"ASTRA_reconstruction": false` in `parameters.json`.
 
 ### Steps
-1. Clone the repository
+1. **Clone the repository**
    ```sh
-    git clone https://github.com/marychrisgo/Fiber-Phantoms.git
+   git clone https://github.com/marychrisgo/Fiber-Phantoms.git
    ```
-2. Navigate to the Project Directory
+2. **Go to the module folder.** The code lives in the `Fiber-phantom-module` subfolder, not in the repository root.
    ```sh
-    cd Fiber-Phantoms
-   ```   
-4. **Create and activate a new Conda environment:**
+   cd Fiber-Phantoms/Fiber-phantom-module
+   ```
+3. **Create and activate a new Conda environment**
     ```sh
     conda create -n fiber_phantom python=3.10
     conda activate fiber_phantom
     ```
-
-5. **Install Dependencies**
+4. **Install the dependencies.** This includes the ASTRA Toolbox with CUDA support.
    ```sh
    pip install -r requirements.txt
    ```
-7. **Install ASTRA using Conda:**
-    ```sh
-    conda install -c astra-toolbox astra-toolbox
-    ```
-8. **Run the Application**
+   Install everything with `pip` as shown here. Don't also run `conda install astra-toolbox` in the same environment: conda would install its own numpy/scipy builds on top, and mixing the two breaks `scipy`.
+5. **Run the application**
    ```sh
-    python main.py
+   python main.py
    ```
+   Results are written to `./FiberDataset`.
+
+### Optional: install as a command
+From the `Fiber-phantom-module` folder:
+```sh
+pip install .
+```
+This installs the `fiber_phantom` command, which you can run from any folder:
+```sh
+fiber_phantom                                    # uses the default parameters
+fiber_phantom -p my_parameters.json -o MyDataset # custom parameter file and output folder
+```
+`python main.py` accepts the same `-p/--params` and `-o/--output` options (`python main.py --help`).
 
 
 ## Usage
@@ -67,8 +77,10 @@ Fiber-Phantoms
     │   requirements.txt
     │   setup.py
     └───fiber_phantom
+        │   __init__.py
         │   defects.py
         │   generate_filaments.py
+        │   main.py
         │   next_point_generator.py
         │   parameters.json
         └───perform_ASTRA.py
@@ -107,8 +119,9 @@ Description of files
 
 * How to run
   There are two main files for running:
-  - `main.py` - this script is the main running file
-  - `parameters.json` - where the user sets the parameters both for the volume and scanning configurations
+  - `main.py` - this script is the main running file (the code itself is in `fiber_phantom/main.py`)
+  - `parameters.json` - where the user sets the parameters both for the volume and scanning configurations. By default `fiber_phantom/parameters.json` is used; pass another file with `python main.py -p my_parameters.json`.
+  - Each defect type reads its settings from its own block in `parameters.json`: `hole` → `hole_params`, `square_notch`/`double_square_notch` → `square_notch_params`, `v_notch`/`double_v_notch` → `v_notch_params`, `reduced` → `reduced_params`.
 
 * ASTRA documentation
   - See [link](https://astra-toolbox.com/index.html)

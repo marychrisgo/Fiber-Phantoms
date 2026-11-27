@@ -3,4 +3,4 @@ matplotlib==3.7.1
 nibabel==5.2.1
 numpy==1.24.2
 scipy==1.13.1
-astra-toolbox==2.1.0
+astra-toolbox==2.5.0
